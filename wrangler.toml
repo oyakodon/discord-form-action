@@ -1,0 +1,15 @@
+name = "discord-form-action"
+main = "src/index.ts"
+compatibility_date = "2026-01-15"
+
+# Workers Paid plan is required for the CPU time needed by discord-interactions
+# See: https://developers.cloudflare.com/workers/platform/pricing
+
+# Environment variables (set via wrangler secret or dashboard)
+# DISCORD_PUBLIC_KEY - Discord Application Public Key
+# DISCORD_APPLICATION_ID - Discord Application ID
+# DISCORD_BOT_TOKEN - Discord Bot Token
+
+[vars]
+# Non-secret environment variables can be set here
+# Example: LOG_LEVEL = "info"

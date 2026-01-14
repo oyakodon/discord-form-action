@@ -1,0 +1,29 @@
+{
+  "compilerOptions": {
+    // Cloudflare Workers environment
+    "types": ["@cloudflare/workers-types"],
+    "lib": ["ESNext"],
+    "target": "ESNext",
+    "module": "ESNext",
+    "moduleDetection": "force",
+
+    // Module resolution
+    "moduleResolution": "bundler",
+    "resolveJsonModule": true,
+    "allowImportingTsExtensions": true,
+    "verbatimModuleSyntax": true,
+    "noEmit": true,
+
+    // Strict type checking
+    "strict": true,
+    "skipLibCheck": true,
+    "noFallthroughCasesInSwitch": true,
+    "noUncheckedIndexedAccess": true,
+    "noImplicitOverride": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "forceConsistentCasingInFileNames": true
+  },
+  "include": ["src/**/*", "script/**/*", "test/**/*", "*.ts"],
+  "exclude": ["node_modules", "dist", ".wrangler"]
+}
