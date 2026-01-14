@@ -24,6 +24,6 @@
     "noUnusedParameters": true,
     "forceConsistentCasingInFileNames": true
   },
-  "include": ["src/**/*", "script/**/*", "test/**/*"],
+  "include": ["src/**/*", "script/**/*", "test/**/*", "*.ts"],
   "exclude": ["node_modules", "dist", ".wrangler"]
 }
