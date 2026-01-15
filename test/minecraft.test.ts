@@ -1,4 +1,4 @@
-import type { APIModalSubmitInteraction, APIUser } from "discord-api-types/v10";
+import type { APIModalSubmitInteraction, APIUser, Locale } from "discord-api-types/v10";
 import { describe, expect, it } from "vitest";
 import { buildMinecraftEmbed, extractFormData } from "../src/forms/minecraft.js";
 
@@ -76,9 +76,11 @@ describe("minecraft form", () => {
           global_name: null,
         },
         app_permissions: "0",
-        locale: "ja",
+        locale: "ja" as Locale,
         entitlements: [],
-      };
+        authorizing_integration_owners: {},
+        attachment_size_limit: 0,
+      } as APIModalSubmitInteraction;
 
       const formData = extractFormData(interaction);
 
@@ -161,9 +163,11 @@ describe("minecraft form", () => {
           global_name: null,
         },
         app_permissions: "0",
-        locale: "ja",
+        locale: "ja" as Locale,
         entitlements: [],
-      };
+        authorizing_integration_owners: {},
+        attachment_size_limit: 0,
+      } as APIModalSubmitInteraction;
 
       const formData = extractFormData(interaction);
 
@@ -246,9 +250,11 @@ describe("minecraft form", () => {
           global_name: null,
         },
         app_permissions: "0",
-        locale: "ja",
+        locale: "ja" as Locale,
         entitlements: [],
-      };
+        authorizing_integration_owners: {},
+        attachment_size_limit: 0,
+      } as APIModalSubmitInteraction;
 
       const formData = extractFormData(interaction);
 
