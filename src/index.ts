@@ -64,8 +64,9 @@ export default {
           return Response.json(getBoardGameModal());
         case "add-map":
           return Response.json(getMinecraftModal());
+        default:
+          return Response.json({ error: "Unknown command" }, { status: 400 });
       }
-      return Response.json({ error: "Unknown command" }, { status: 400 });
     }
 
     // ModalSubmit処理
@@ -75,8 +76,9 @@ export default {
           return handleBoardGameSubmit(interaction, env, _ctx);
         case "minecraft_form":
           return handleMinecraftSubmit(interaction, env, _ctx);
+        default:
+          return Response.json({ error: "Unknown modal" }, { status: 400 });
       }
-      return Response.json({ error: "Unknown modal" }, { status: 400 });
     }
 
     return Response.json({ error: "Unknown Type" }, { status: 400 });

@@ -119,7 +119,17 @@ export function extractFormData(
 		}
 	}
 
-	return formData as MinecraftFormData;
+	const cleanedFormData = formData as MinecraftFormData;
+
+	// オプショナルフィールドは空文字列の場合は undefined として扱う
+	if (cleanedFormData.mc_version === "") {
+		delete cleanedFormData.mc_version;
+	}
+	if (cleanedFormData.tags === "") {
+		delete cleanedFormData.tags;
+	}
+
+	return cleanedFormData;
 }
 
 /**

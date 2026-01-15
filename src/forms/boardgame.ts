@@ -14,7 +14,7 @@ interface BoardGameFormData {
 	game_name: string;
 	player_count?: string;
 	play_time?: string;
-	owner_url: string;
+	owner_url?: string;
 }
 
 /**
@@ -76,7 +76,7 @@ export function getBoardGameModal() {
 							custom_id: "owner_url",
 							label: "所有者/URL",
 							style: 1,
-							required: true,
+							required: false,
 							placeholder: "所有者名 または オンラインゲームのURL",
 							max_length: 500,
 						},
@@ -122,8 +122,20 @@ export function extractFormData(interaction: APIModalSubmitInteraction): {
 		? Object.values(interaction.resolved.attachments).map((att) => att.url)
 		: [];
 
+	// オプショナルフィールドは空文字列の場合は undefined として扱う
+	const cleanedFormData = formData as BoardGameFormData;
+	if (cleanedFormData.player_count === "") {
+		delete cleanedFormData.player_count;
+	}
+	if (cleanedFormData.play_time === "") {
+		delete cleanedFormData.play_time;
+	}
+	if (cleanedFormData.owner_url === "") {
+		delete cleanedFormData.owner_url;
+	}
+
 	return {
-		formData: formData as BoardGameFormData,
+		formData: cleanedFormData,
 		attachmentUrls,
 	};
 }
@@ -136,7 +148,7 @@ export function buildBoardGameEmbed(
 	user: APIUser,
 	imageUrl?: string,
 ): APIEmbed {
-	const isOnlineGame = isUrl(formData.owner_url);
+	const isOnlineGame = formData.owner_url ? isUrl(formData.owner_url) : false;
 	const gameType = isOnlineGame ? "オンラインゲーム" : "物理ゲーム";
 
 	const fields = [];
@@ -160,18 +172,20 @@ export function buildBoardGameEmbed(
 	}
 
 	// 所有者/URL
-	if (isOnlineGame) {
-		fields.push({
-			name: "URL",
-			value: formData.owner_url,
-			inline: false,
-		});
-	} else {
-		fields.push({
-			name: "所有者",
-			value: formData.owner_url,
-			inline: false,
-		});
+	if (formData.owner_url) {
+		if (isOnlineGame) {
+			fields.push({
+				name: "URL",
+				value: formData.owner_url,
+				inline: false,
+			});
+		} else {
+			fields.push({
+				name: "所有者",
+				value: formData.owner_url,
+				inline: false,
+			});
+		}
 	}
 
 	const embed: APIEmbed = {
@@ -215,7 +229,6 @@ export async function handleBoardGameSubmit(
 
 				// バリデーション
 				validateRequired(formData.game_name, "ゲーム名");
-				validateRequired(formData.owner_url, "所有者/URL");
 
 				// ユーザー情報取得
 				const user =
@@ -229,15 +242,21 @@ export async function handleBoardGameSubmit(
 
 				// ファイルダウンロード処理
 				let imageUrl: string | undefined;
+				let downloadedFiles: Awaited<ReturnType<typeof downloadAttachments>> | undefined;
 				if (attachmentUrls.length > 0) {
 					try {
-						const files = await downloadAttachments(attachmentUrls);
+						downloadedFiles = await downloadAttachments(attachmentUrls);
 						// 画像をDiscordにアップロード
-						const formData = new FormData();
-						formData.append(
+						const uploadFormData = new FormData();
+
+						// ファイル拡張子を取得（Content-Typeから推測）
+						const originalUrl = new URL(downloadedFiles[0].url);
+						const filename = originalUrl.pathname.split("/").pop() || `boardgame_${Date.now()}.png`;
+
+						uploadFormData.append(
 							"files[0]",
-							new Blob([files[0].buffer]),
-							`boardgame_${Date.now()}.png`,
+							new Blob([downloadedFiles[0].buffer]),
+							filename,
 						);
 
 						// チャンネルに画像を投稿してURLを取得
@@ -248,12 +267,13 @@ export async function handleBoardGameSubmit(
 								headers: {
 									Authorization: `Bot ${env.DISCORD_BOT_TOKEN}`,
 								},
-								body: formData,
+								body: uploadFormData,
 							},
 						);
 
 						if (uploadResponse.ok) {
-							const uploadResult = await uploadResponse.json();
+							const uploadResult: { attachments?: { url: string }[] } =
+								await uploadResponse.json();
 							if (uploadResult.attachments && uploadResult.attachments.length > 0) {
 								imageUrl = uploadResult.attachments[0].url;
 							}
