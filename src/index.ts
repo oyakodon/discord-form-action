@@ -1,5 +1,13 @@
 import type { APIInteraction } from "discord-api-types/v10";
 import { verifyKey } from "discord-interactions";
+import {
+	getBoardGameModal,
+	handleBoardGameSubmit,
+} from "./forms/boardgame.js";
+import {
+	getMinecraftModal,
+	handleMinecraftSubmit,
+} from "./forms/minecraft.js";
 
 /**
  * Discord署名検証
@@ -51,26 +59,26 @@ export default {
 
     // ApplicationCommand処理
     if (interaction.type === 2 /* InteractionType.ApplicationCommand */) {
-      // TODO: コマンド名で振り分け
-      // switch (interaction.data.name) {
-      //   case 'add-game':
-      //     return handleBoardGameCommand(interaction, env);
-      //   case 'add-map':
-      //     return handleMinecraftCommand(interaction, env);
-      // }
-      return Response.json({ error: "Command not implemented yet" }, { status: 501 });
+      switch (interaction.data.name) {
+        case "add-game":
+          return Response.json(getBoardGameModal());
+        case "add-map":
+          return Response.json(getMinecraftModal());
+        default:
+          return Response.json({ error: "Unknown command" }, { status: 400 });
+      }
     }
 
     // ModalSubmit処理
     if (interaction.type === 5 /* InteractionType.ModalSubmit */) {
-      // TODO: custom_idで振り分け
-      // switch (interaction.data.custom_id) {
-      //   case 'boardgame_form':
-      //     return handleBoardGameSubmit(interaction, env, _ctx);
-      //   case 'minecraft_form':
-      //     return handleMinecraftSubmit(interaction, env, _ctx);
-      // }
-      return Response.json({ error: "Modal submit not implemented yet" }, { status: 501 });
+      switch (interaction.data.custom_id) {
+        case "boardgame_form":
+          return handleBoardGameSubmit(interaction, env, _ctx);
+        case "minecraft_form":
+          return handleMinecraftSubmit(interaction, env, _ctx);
+        default:
+          return Response.json({ error: "Unknown modal" }, { status: 400 });
+      }
     }
 
     return Response.json({ error: "Unknown Type" }, { status: 400 });
