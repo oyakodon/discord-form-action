@@ -241,66 +241,76 @@ export async function handleBoardGameSubmit(
 				}
 
 				// ファイルダウンロード処理
-				let imageUrl: string | undefined;
-				let downloadedFiles: Awaited<ReturnType<typeof downloadAttachments>> | undefined;
+				let downloadedFile:
+					| { buffer: ArrayBuffer; filename: string }
+					| undefined;
 				if (attachmentUrls.length > 0) {
 					try {
-						downloadedFiles = await downloadAttachments(attachmentUrls);
-						// 画像をDiscordにアップロード
-						const uploadFormData = new FormData();
-
-						// ファイル拡張子を取得（Content-Typeから推測）
-						const originalUrl = new URL(downloadedFiles[0].url);
-						const filename = originalUrl.pathname.split("/").pop() || `boardgame_${Date.now()}.png`;
-
-						uploadFormData.append(
-							"files[0]",
-							new Blob([downloadedFiles[0].buffer]),
+						const files = await downloadAttachments(attachmentUrls);
+						// ファイル名を取得
+						const originalUrl = new URL(files[0].url);
+						const filename =
+							originalUrl.pathname.split("/").pop() ||
+							`boardgame_${Date.now()}.png`;
+						downloadedFile = {
+							buffer: files[0].buffer,
 							filename,
-						);
-
-						// チャンネルに画像を投稿してURLを取得
-						const uploadResponse = await fetch(
-							`https://discord.com/api/v10/channels/${env.BOARDGAME_CHANNEL_ID}/messages`,
-							{
-								method: "POST",
-								headers: {
-									Authorization: `Bot ${env.DISCORD_BOT_TOKEN}`,
-								},
-								body: uploadFormData,
-							},
-						);
-
-						if (uploadResponse.ok) {
-							const uploadResult: { attachments?: { url: string }[] } =
-								await uploadResponse.json();
-							if (uploadResult.attachments && uploadResult.attachments.length > 0) {
-								imageUrl = uploadResult.attachments[0].url;
-							}
-						}
+						};
 					} catch (error) {
 						console.error("Failed to download attachment:", error);
 						// 画像エラーは警告として扱い、処理は継続
 					}
 				}
 
-				// Embed構築
+				// Embed構築（画像がある場合は attachment:// URL を使用）
+				const imageUrl = downloadedFile
+					? `attachment://${downloadedFile.filename}`
+					: undefined;
 				const embed = buildBoardGameEmbed(formData, user, imageUrl);
 
 				// チャンネルに投稿
-				const channelResponse = await fetch(
-					`https://discord.com/api/v10/channels/${env.BOARDGAME_CHANNEL_ID}/messages`,
-					{
-						method: "POST",
-						headers: {
-							Authorization: `Bot ${env.DISCORD_BOT_TOKEN}`,
-							"Content-Type": "application/json",
-						},
-						body: JSON.stringify({
+				let channelResponse: Response;
+				if (downloadedFile) {
+					// 画像がある場合: multipart/form-data で送信
+					const messageFormData = new FormData();
+					messageFormData.append(
+						"payload_json",
+						JSON.stringify({
 							embeds: [embed],
 						}),
-					},
-				);
+					);
+					messageFormData.append(
+						"files[0]",
+						new Blob([downloadedFile.buffer]),
+						downloadedFile.filename,
+					);
+
+					channelResponse = await fetch(
+						`https://discord.com/api/v10/channels/${env.BOARDGAME_CHANNEL_ID}/messages`,
+						{
+							method: "POST",
+							headers: {
+								Authorization: `Bot ${env.DISCORD_BOT_TOKEN}`,
+							},
+							body: messageFormData,
+						},
+					);
+				} else {
+					// 画像がない場合: JSON で送信
+					channelResponse = await fetch(
+						`https://discord.com/api/v10/channels/${env.BOARDGAME_CHANNEL_ID}/messages`,
+						{
+							method: "POST",
+							headers: {
+								Authorization: `Bot ${env.DISCORD_BOT_TOKEN}`,
+								"Content-Type": "application/json",
+							},
+							body: JSON.stringify({
+								embeds: [embed],
+							}),
+						},
+					);
+				}
 
 				if (!channelResponse.ok) {
 					throw new Error(
