@@ -1,13 +1,7 @@
 import type { APIInteraction } from "discord-api-types/v10";
 import { verifyKey } from "discord-interactions";
-import {
-	getBoardGameModal,
-	handleBoardGameSubmit,
-} from "./forms/boardgame.js";
-import {
-	getMinecraftModal,
-	handleMinecraftSubmit,
-} from "./forms/minecraft.js";
+import { getBoardGameModal, handleBoardGameSubmit } from "./forms/boardgame.js";
+import { getMinecraftModal, handleMinecraftSubmit } from "./forms/minecraft.js";
 
 /**
  * Discord署名検証
