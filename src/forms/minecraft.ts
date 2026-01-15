@@ -119,15 +119,14 @@ export function extractFormData(
 		}
 	}
 
-	const cleanedFormData = formData as MinecraftFormData;
-
 	// オプショナルフィールドは空文字列の場合は undefined として扱う
-	if (cleanedFormData.mc_version === "") {
-		delete cleanedFormData.mc_version;
-	}
-	if (cleanedFormData.tags === "") {
-		delete cleanedFormData.tags;
-	}
+	const cleanedFormData: MinecraftFormData = {
+		map_name: formData.map_name || "",
+		url: formData.url || "",
+		player_count: formData.player_count || "",
+		mc_version: formData.mc_version || undefined,
+		tags: formData.tags || undefined,
+	};
 
 	return cleanedFormData;
 }

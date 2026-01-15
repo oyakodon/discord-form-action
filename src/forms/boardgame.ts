@@ -123,16 +123,12 @@ export function extractFormData(interaction: APIModalSubmitInteraction): {
 		: [];
 
 	// オプショナルフィールドは空文字列の場合は undefined として扱う
-	const cleanedFormData = formData as BoardGameFormData;
-	if (cleanedFormData.player_count === "") {
-		delete cleanedFormData.player_count;
-	}
-	if (cleanedFormData.play_time === "") {
-		delete cleanedFormData.play_time;
-	}
-	if (cleanedFormData.owner_url === "") {
-		delete cleanedFormData.owner_url;
-	}
+	const cleanedFormData: BoardGameFormData = {
+		game_name: formData.game_name || "",
+		player_count: formData.player_count || undefined,
+		play_time: formData.play_time || undefined,
+		owner_url: formData.owner_url || undefined,
+	};
 
 	return {
 		formData: cleanedFormData,
