@@ -109,6 +109,7 @@ export function extractFormData(interaction: APIModalSubmitInteraction): {
 
   // TextInput values
   for (const row of interaction.data.components) {
+    // @ts-expect-error: discord-api-types does not properly type nested components
     for (const component of row.components) {
       if (component.type === 4 && component.value !== undefined) {
         // TextInput
@@ -118,13 +119,15 @@ export function extractFormData(interaction: APIModalSubmitInteraction): {
   }
 
   // File attachments
+  // @ts-expect-error: resolved property exists in runtime but not typed in discord-api-types
   const attachmentUrls = interaction.resolved?.attachments
-    ? Object.values(interaction.resolved.attachments).map((att) => att.url)
+    ? // @ts-expect-error: resolved property exists in runtime but not typed in discord-api-types
+      Object.values(interaction.resolved.attachments).map((att: { url: string }) => att.url)
     : [];
 
   // 空文字列はundefinedとして扱う
   const result: BoardGameFormData = {
-    game_name: formData.game_name,
+    game_name: formData.game_name || "",
     player_count: formData.player_count || undefined,
     play_time: formData.play_time || undefined,
     owner_url: formData.owner_url || undefined,
@@ -241,13 +244,16 @@ export async function handleBoardGameSubmit(
         if (attachmentUrls.length > 0) {
           try {
             const files = await downloadAttachments(attachmentUrls);
-            // ファイル名を取得
-            const originalUrl = new URL(files[0].url);
-            const filename = originalUrl.pathname.split("/").pop() || `boardgame_${Date.now()}.png`;
-            downloadedFile = {
-              buffer: files[0].buffer,
-              filename,
-            };
+            if (files[0]) {
+              // ファイル名を取得
+              const originalUrl = new URL(files[0].url);
+              const filename =
+                originalUrl.pathname.split("/").pop() || `boardgame_${Date.now()}.png`;
+              downloadedFile = {
+                buffer: files[0].buffer,
+                filename,
+              };
+            }
           } catch (error) {
             console.error("Failed to download attachment:", error);
             // 画像エラーは警告として扱い、処理は継続

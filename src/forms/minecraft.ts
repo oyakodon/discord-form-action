@@ -109,6 +109,7 @@ export function extractFormData(interaction: APIModalSubmitInteraction): Minecra
 
   // TextInput values
   for (const row of interaction.data.components) {
+    // @ts-expect-error: discord-api-types does not properly type nested components
     for (const component of row.components) {
       if (component.type === 4 && component.value !== undefined) {
         // TextInput
@@ -119,9 +120,9 @@ export function extractFormData(interaction: APIModalSubmitInteraction): Minecra
 
   // 空文字列はundefinedとして扱う
   const result: MinecraftFormData = {
-    map_name: formData.map_name,
-    url: formData.url,
-    player_count: formData.player_count,
+    map_name: formData.map_name || "",
+    url: formData.url || "",
+    player_count: formData.player_count || "",
     mc_version: formData.mc_version || undefined,
     tags: formData.tags || undefined,
   };
