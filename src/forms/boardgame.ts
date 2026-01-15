@@ -150,6 +150,25 @@ export function extractFormData(interaction: APIModalSubmitInteraction): {
 }
 
 /**
+ * バリデーション済みデータへの変換
+ */
+function validateAndConvert(formData: BoardGameFormData): ValidatedBoardGameFormData {
+  // バリデーション
+  validateRequired(formData.game_name, "ゲーム名");
+
+  // validateRequiredを通過しているため、game_nameは必ず存在する
+  const game_name = formData.game_name as string;
+
+  // バリデーションを通過したデータを明示的に構築
+  return {
+    game_name,
+    player_count: formData.player_count,
+    play_time: formData.play_time,
+    owner_url: formData.owner_url,
+  };
+}
+
+/**
  * Embed構築
  */
 export function buildBoardGameEmbed(
@@ -236,11 +255,8 @@ export async function handleBoardGameSubmit(
         // データ抽出
         const { formData, attachmentUrls } = extractFormData(interaction);
 
-        // バリデーション
-        validateRequired(formData.game_name, "ゲーム名");
-
-        // バリデーション済みデータとして扱う
-        const validatedFormData = formData as ValidatedBoardGameFormData;
+        // バリデーションと変換
+        const validatedFormData = validateAndConvert(formData);
 
         // ユーザー情報取得
         const user =

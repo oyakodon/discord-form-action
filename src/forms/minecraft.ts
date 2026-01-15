@@ -142,6 +142,35 @@ export function extractFormData(interaction: APIModalSubmitInteraction): Minecra
 }
 
 /**
+ * バリデーション済みデータへの変換
+ */
+function validateAndConvert(formData: MinecraftFormData): ValidatedMinecraftFormData {
+  // バリデーション
+  validateRequired(formData.map_name, "マップ名");
+  validateRequired(formData.url, "URL");
+  validateRequired(formData.player_count, "プレイ人数");
+
+  // validateRequiredを通過しているため、これらのフィールドは必ず存在する
+  const map_name = formData.map_name as string;
+  const url = formData.url as string;
+  const player_count = formData.player_count as string;
+
+  // URL形式チェック
+  if (!isUrl(url)) {
+    throw new ValidationError("URLは http:// または https:// で始まる形式で入力してください");
+  }
+
+  // バリデーションを通過したデータを明示的に構築
+  return {
+    map_name,
+    url,
+    player_count,
+    mc_version: formData.mc_version,
+    tags: formData.tags,
+  };
+}
+
+/**
  * Embed構築
  */
 export function buildMinecraftEmbed(formData: ValidatedMinecraftFormData, user: APIUser): APIEmbed {
@@ -213,18 +242,8 @@ export async function handleMinecraftSubmit(
         // データ抽出
         const formData = extractFormData(interaction);
 
-        // バリデーション
-        validateRequired(formData.map_name, "マップ名");
-        validateRequired(formData.url, "URL");
-        validateRequired(formData.player_count, "プレイ人数");
-
-        // バリデーション済みデータとして扱う
-        const validatedFormData = formData as ValidatedMinecraftFormData;
-
-        // URL形式チェック
-        if (!isUrl(validatedFormData.url)) {
-          throw new ValidationError("URLは http:// または https:// で始まる形式で入力してください");
-        }
+        // バリデーションと変換
+        const validatedFormData = validateAndConvert(formData);
 
         // ユーザー情報取得
         const user =
