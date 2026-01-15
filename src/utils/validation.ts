@@ -18,10 +18,15 @@ export function validateRequired(value: string | undefined, fieldName: string): 
 }
 
 /**
- * URL形式チェック（http/https で始まるか）
+ * URL形式チェック（有効なhttp/https URLか）
  */
 export function isUrl(value: string): boolean {
-  return value.startsWith("http://") || value.startsWith("https://");
+  try {
+    const url = new URL(value);
+    return url.protocol === "http:" || url.protocol === "https:";
+  } catch {
+    return false;
+  }
 }
 
 /**

@@ -19,9 +19,34 @@ const ALLOWED_CONTENT_TYPES = ["image/png", "image/jpeg", "image/gif", "image/we
 const MAX_FILE_SIZE = 8 * 1024 * 1024;
 
 /**
+ * 許可するDiscord CDNドメイン
+ */
+const ALLOWED_CDN_DOMAINS = ["cdn.discordapp.com", "media.discordapp.net"] as const;
+
+/**
+ * URLがDiscord CDNからのものか検証
+ */
+function isDiscordCdnUrl(url: string): boolean {
+  try {
+    const parsed = new URL(url);
+    return (
+      parsed.protocol === "https:" &&
+      ALLOWED_CDN_DOMAINS.some((domain) => parsed.hostname === domain)
+    );
+  } catch {
+    return false;
+  }
+}
+
+/**
  * Discord CDNからファイルをダウンロード
  */
 export async function downloadAttachment(url: string): Promise<ArrayBuffer> {
+  // Discord CDNのURLか検証（SSRF対策）
+  if (!isDiscordCdnUrl(url)) {
+    throw new FileServiceError("Discord CDNからのファイルのみダウンロード可能です");
+  }
+
   const response = await fetch(url);
 
   if (!response.ok) {
