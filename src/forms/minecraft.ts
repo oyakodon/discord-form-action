@@ -4,6 +4,7 @@ import type {
   APIUser,
   InteractionResponseType,
 } from "discord-api-types/v10";
+import { ComponentType } from "discord-api-types/v10";
 import { isUrl, ValidationError, validateRequired } from "../utils/validation.js";
 
 /**
@@ -109,11 +110,13 @@ export function extractFormData(interaction: APIModalSubmitInteraction): Minecra
 
   // TextInput values
   for (const row of interaction.data.components) {
-    // @ts-expect-error: discord-api-types does not properly type nested components
-    for (const component of row.components) {
-      if (component.type === 4 && component.value !== undefined) {
-        // TextInput
-        formData[component.custom_id] = component.value.trim();
+    // ActionRowコンポーネントのみを処理
+    if (row.type === ComponentType.ActionRow) {
+      for (const component of row.components) {
+        // TextInputコンポーネントのみを処理
+        if (component.type === ComponentType.TextInput && component.value !== undefined) {
+          formData[component.custom_id] = component.value.trim();
+        }
       }
     }
   }
