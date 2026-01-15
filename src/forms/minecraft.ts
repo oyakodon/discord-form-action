@@ -7,9 +7,20 @@ import type {
 import { isUrl, ValidationError, validateRequired } from "../utils/validation.js";
 
 /**
- * Minecraftフォームのデータ
+ * Minecraftフォームのデータ（抽出時）
  */
 interface MinecraftFormData {
+  map_name: string | undefined;
+  url: string | undefined;
+  player_count: string | undefined;
+  mc_version?: string;
+  tags?: string;
+}
+
+/**
+ * Minecraftフォームのデータ（バリデーション済み）
+ */
+interface ValidatedMinecraftFormData {
   map_name: string;
   url: string;
   player_count: string;
@@ -120,9 +131,9 @@ export function extractFormData(interaction: APIModalSubmitInteraction): Minecra
 
   // 空文字列はundefinedとして扱う
   const result: MinecraftFormData = {
-    map_name: formData.map_name || "",
-    url: formData.url || "",
-    player_count: formData.player_count || "",
+    map_name: formData.map_name || undefined,
+    url: formData.url || undefined,
+    player_count: formData.player_count || undefined,
     mc_version: formData.mc_version || undefined,
     tags: formData.tags || undefined,
   };
@@ -133,7 +144,7 @@ export function extractFormData(interaction: APIModalSubmitInteraction): Minecra
 /**
  * Embed構築
  */
-export function buildMinecraftEmbed(formData: MinecraftFormData, user: APIUser): APIEmbed {
+export function buildMinecraftEmbed(formData: ValidatedMinecraftFormData, user: APIUser): APIEmbed {
   const fields = [];
 
   // URL
@@ -207,8 +218,11 @@ export async function handleMinecraftSubmit(
         validateRequired(formData.url, "URL");
         validateRequired(formData.player_count, "プレイ人数");
 
+        // バリデーション済みデータとして扱う
+        const validatedFormData = formData as ValidatedMinecraftFormData;
+
         // URL形式チェック
-        if (!isUrl(formData.url)) {
+        if (!isUrl(validatedFormData.url)) {
           throw new ValidationError("URLは http:// または https:// で始まる形式で入力してください");
         }
 
@@ -223,7 +237,7 @@ export async function handleMinecraftSubmit(
         }
 
         // Embed構築
-        const embed = buildMinecraftEmbed(formData, user);
+        const embed = buildMinecraftEmbed(validatedFormData, user);
 
         // チャンネルに投稿
         const channelResponse = await fetch(

@@ -8,9 +8,19 @@ import { downloadAttachments } from "../utils/fileService.js";
 import { isUrl, ValidationError, validateRequired } from "../utils/validation.js";
 
 /**
- * ボードゲームフォームのデータ
+ * ボードゲームフォームのデータ（抽出時）
  */
 interface BoardGameFormData {
+  game_name: string | undefined;
+  player_count?: string;
+  play_time?: string;
+  owner_url?: string;
+}
+
+/**
+ * ボードゲームフォームのデータ（バリデーション済み）
+ */
+interface ValidatedBoardGameFormData {
   game_name: string;
   player_count?: string;
   play_time?: string;
@@ -127,7 +137,7 @@ export function extractFormData(interaction: APIModalSubmitInteraction): {
 
   // 空文字列はundefinedとして扱う
   const result: BoardGameFormData = {
-    game_name: formData.game_name || "",
+    game_name: formData.game_name || undefined,
     player_count: formData.player_count || undefined,
     play_time: formData.play_time || undefined,
     owner_url: formData.owner_url || undefined,
@@ -143,7 +153,7 @@ export function extractFormData(interaction: APIModalSubmitInteraction): {
  * Embed構築
  */
 export function buildBoardGameEmbed(
-  formData: BoardGameFormData,
+  formData: ValidatedBoardGameFormData,
   user: APIUser,
   imageUrl?: string,
 ): APIEmbed {
@@ -229,6 +239,9 @@ export async function handleBoardGameSubmit(
         // バリデーション
         validateRequired(formData.game_name, "ゲーム名");
 
+        // バリデーション済みデータとして扱う
+        const validatedFormData = formData as ValidatedBoardGameFormData;
+
         // ユーザー情報取得
         const user =
           "member" in interaction && interaction.member?.user
@@ -262,7 +275,7 @@ export async function handleBoardGameSubmit(
 
         // Embed構築（画像がある場合は attachment:// URL を使用）
         const imageUrl = downloadedFile ? `attachment://${downloadedFile.filename}` : undefined;
-        const embed = buildBoardGameEmbed(formData, user, imageUrl);
+        const embed = buildBoardGameEmbed(validatedFormData, user, imageUrl);
 
         // チャンネルに投稿
         let channelResponse: Response;

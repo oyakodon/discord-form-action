@@ -170,3 +170,4 @@ src/commands.json
 .Trashes
 ehthumbs.db
 Thumbs.db
+package-lock.json
