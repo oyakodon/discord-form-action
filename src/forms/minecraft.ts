@@ -8,9 +8,20 @@ import { ComponentType } from "discord-api-types/v10";
 import { isUrl, ValidationError, validateRequired } from "../utils/validation.js";
 
 /**
- * Minecraftフォームのデータ
+ * Minecraftフォームのデータ（抽出時）
  */
 interface MinecraftFormData {
+  map_name: string | undefined;
+  url: string | undefined;
+  player_count: string | undefined;
+  mc_version?: string;
+  tags?: string;
+}
+
+/**
+ * Minecraftフォームのデータ（バリデーション済み）
+ */
+interface ValidatedMinecraftFormData {
   map_name: string;
   url: string;
   player_count: string;
@@ -123,9 +134,9 @@ export function extractFormData(interaction: APIModalSubmitInteraction): Minecra
 
   // 空文字列はundefinedとして扱う
   const result: MinecraftFormData = {
-    map_name: formData.map_name || "",
-    url: formData.url || "",
-    player_count: formData.player_count || "",
+    map_name: formData.map_name || undefined,
+    url: formData.url || undefined,
+    player_count: formData.player_count || undefined,
     mc_version: formData.mc_version || undefined,
     tags: formData.tags || undefined,
   };
@@ -134,9 +145,38 @@ export function extractFormData(interaction: APIModalSubmitInteraction): Minecra
 }
 
 /**
+ * バリデーション済みデータへの変換
+ */
+function validateAndConvert(formData: MinecraftFormData): ValidatedMinecraftFormData {
+  // バリデーション
+  validateRequired(formData.map_name, "マップ名");
+  validateRequired(formData.url, "URL");
+  validateRequired(formData.player_count, "プレイ人数");
+
+  // validateRequiredを通過しているため、これらのフィールドは必ず存在する
+  const map_name = formData.map_name as string;
+  const url = formData.url as string;
+  const player_count = formData.player_count as string;
+
+  // URL形式チェック
+  if (!isUrl(url)) {
+    throw new ValidationError("URLは http:// または https:// で始まる形式で入力してください");
+  }
+
+  // バリデーションを通過したデータを明示的に構築
+  return {
+    map_name,
+    url,
+    player_count,
+    mc_version: formData.mc_version,
+    tags: formData.tags,
+  };
+}
+
+/**
  * Embed構築
  */
-export function buildMinecraftEmbed(formData: MinecraftFormData, user: APIUser): APIEmbed {
+export function buildMinecraftEmbed(formData: ValidatedMinecraftFormData, user: APIUser): APIEmbed {
   const fields = [];
 
   // URL
@@ -205,15 +245,8 @@ export async function handleMinecraftSubmit(
         // データ抽出
         const formData = extractFormData(interaction);
 
-        // バリデーション
-        validateRequired(formData.map_name, "マップ名");
-        validateRequired(formData.url, "URL");
-        validateRequired(formData.player_count, "プレイ人数");
-
-        // URL形式チェック
-        if (!isUrl(formData.url)) {
-          throw new ValidationError("URLは http:// または https:// で始まる形式で入力してください");
-        }
+        // バリデーションと変換
+        const validatedFormData = validateAndConvert(formData);
 
         // ユーザー情報取得
         const user =
@@ -226,7 +259,7 @@ export async function handleMinecraftSubmit(
         }
 
         // Embed構築
-        const embed = buildMinecraftEmbed(formData, user);
+        const embed = buildMinecraftEmbed(validatedFormData, user);
 
         // チャンネルに投稿
         const channelResponse = await fetch(

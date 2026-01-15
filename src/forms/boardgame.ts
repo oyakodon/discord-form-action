@@ -9,9 +9,19 @@ import { downloadAttachments } from "../utils/fileService.js";
 import { isUrl, ValidationError, validateRequired } from "../utils/validation.js";
 
 /**
- * ボードゲームフォームのデータ
+ * ボードゲームフォームのデータ（抽出時）
  */
 interface BoardGameFormData {
+  game_name: string | undefined;
+  player_count?: string;
+  play_time?: string;
+  owner_url?: string;
+}
+
+/**
+ * ボードゲームフォームのデータ（バリデーション済み）
+ */
+interface ValidatedBoardGameFormData {
   game_name: string;
   player_count?: string;
   play_time?: string;
@@ -128,7 +138,7 @@ export function extractFormData(interaction: APIModalSubmitInteraction): {
 
   // 空文字列はundefinedとして扱う
   const result: BoardGameFormData = {
-    game_name: formData.game_name || "",
+    game_name: formData.game_name || undefined,
     player_count: formData.player_count || undefined,
     play_time: formData.play_time || undefined,
     owner_url: formData.owner_url || undefined,
@@ -141,10 +151,29 @@ export function extractFormData(interaction: APIModalSubmitInteraction): {
 }
 
 /**
+ * バリデーション済みデータへの変換
+ */
+function validateAndConvert(formData: BoardGameFormData): ValidatedBoardGameFormData {
+  // バリデーション
+  validateRequired(formData.game_name, "ゲーム名");
+
+  // validateRequiredを通過しているため、game_nameは必ず存在する
+  const game_name = formData.game_name as string;
+
+  // バリデーションを通過したデータを明示的に構築
+  return {
+    game_name,
+    player_count: formData.player_count,
+    play_time: formData.play_time,
+    owner_url: formData.owner_url,
+  };
+}
+
+/**
  * Embed構築
  */
 export function buildBoardGameEmbed(
-  formData: BoardGameFormData,
+  formData: ValidatedBoardGameFormData,
   user: APIUser,
   imageUrl?: string,
 ): APIEmbed {
@@ -227,8 +256,8 @@ export async function handleBoardGameSubmit(
         // データ抽出
         const { formData, attachmentUrls } = extractFormData(interaction);
 
-        // バリデーション
-        validateRequired(formData.game_name, "ゲーム名");
+        // バリデーションと変換
+        const validatedFormData = validateAndConvert(formData);
 
         // ユーザー情報取得
         const user =
@@ -263,7 +292,7 @@ export async function handleBoardGameSubmit(
 
         // Embed構築（画像がある場合は attachment:// URL を使用）
         const imageUrl = downloadedFile ? `attachment://${downloadedFile.filename}` : undefined;
-        const embed = buildBoardGameEmbed(formData, user, imageUrl);
+        const embed = buildBoardGameEmbed(validatedFormData, user, imageUrl);
 
         // チャンネルに投稿
         let channelResponse: Response;
