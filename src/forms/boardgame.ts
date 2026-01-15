@@ -110,7 +110,7 @@ export function extractFormData(interaction: APIModalSubmitInteraction): {
 	// TextInput values
 	for (const row of interaction.data.components) {
 		for (const component of row.components) {
-			if (component.type === 4 && component.value) {
+			if (component.type === 4 && component.value !== undefined) {
 				// TextInput
 				formData[component.custom_id] = component.value.trim();
 			}
@@ -122,16 +122,16 @@ export function extractFormData(interaction: APIModalSubmitInteraction): {
 		? Object.values(interaction.resolved.attachments).map((att) => att.url)
 		: [];
 
-	// オプショナルフィールドは空文字列の場合は undefined として扱う
-	const cleanedFormData: BoardGameFormData = {
-		game_name: formData.game_name || "",
+	// 空文字列はundefinedとして扱う
+	const result: BoardGameFormData = {
+		game_name: formData.game_name,
 		player_count: formData.player_count || undefined,
 		play_time: formData.play_time || undefined,
 		owner_url: formData.owner_url || undefined,
 	};
 
 	return {
-		formData: cleanedFormData,
+		formData: result,
 		attachmentUrls,
 	};
 }

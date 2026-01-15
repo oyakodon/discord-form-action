@@ -112,23 +112,23 @@ export function extractFormData(
 	// TextInput values
 	for (const row of interaction.data.components) {
 		for (const component of row.components) {
-			if (component.type === 4 && component.value) {
+			if (component.type === 4 && component.value !== undefined) {
 				// TextInput
 				formData[component.custom_id] = component.value.trim();
 			}
 		}
 	}
 
-	// オプショナルフィールドは空文字列の場合は undefined として扱う
-	const cleanedFormData: MinecraftFormData = {
-		map_name: formData.map_name || "",
-		url: formData.url || "",
-		player_count: formData.player_count || "",
+	// 空文字列はundefinedとして扱う
+	const result: MinecraftFormData = {
+		map_name: formData.map_name,
+		url: formData.url,
+		player_count: formData.player_count,
 		mc_version: formData.mc_version || undefined,
 		tags: formData.tags || undefined,
 	};
 
-	return cleanedFormData;
+	return result;
 }
 
 /**
