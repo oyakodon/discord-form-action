@@ -4,6 +4,7 @@ import type {
   APIUser,
   InteractionResponseType,
 } from "discord-api-types/v10";
+import { ComponentType } from "discord-api-types/v10";
 import { downloadAttachments } from "../utils/fileService.js";
 import { isUrl, ValidationError, validateRequired } from "../utils/validation.js";
 
@@ -109,20 +110,20 @@ export function extractFormData(interaction: APIModalSubmitInteraction): {
 
   // TextInput values
   for (const row of interaction.data.components) {
-    // @ts-expect-error: discord-api-types does not properly type nested components
-    for (const component of row.components) {
-      if (component.type === 4 && component.value !== undefined) {
-        // TextInput
-        formData[component.custom_id] = component.value.trim();
+    // ActionRowコンポーネントのみを処理
+    if (row.type === ComponentType.ActionRow) {
+      for (const component of row.components) {
+        // TextInputコンポーネントのみを処理
+        if (component.type === ComponentType.TextInput && component.value !== undefined) {
+          formData[component.custom_id] = component.value.trim();
+        }
       }
     }
   }
 
   // File attachments
-  // @ts-expect-error: resolved property exists in runtime but not typed in discord-api-types
-  const attachmentUrls = interaction.resolved?.attachments
-    ? // @ts-expect-error: resolved property exists in runtime but not typed in discord-api-types
-      Object.values(interaction.resolved.attachments).map((att: { url: string }) => att.url)
+  const attachmentUrls = interaction.data.resolved?.attachments
+    ? Object.values(interaction.data.resolved.attachments).map((att) => att.url)
     : [];
 
   // 空文字列はundefinedとして扱う
