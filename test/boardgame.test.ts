@@ -1,4 +1,4 @@
-import type { APIModalSubmitInteraction, APIUser } from "discord-api-types/v10";
+import type { APIModalSubmitInteraction, APIUser, Locale } from "discord-api-types/v10";
 import { describe, expect, it } from "vitest";
 import { buildBoardGameEmbed, extractFormData } from "../src/forms/boardgame.js";
 
@@ -66,9 +66,11 @@ describe("boardgame form", () => {
           global_name: null,
         },
         app_permissions: "0",
-        locale: "ja",
+        locale: "ja" as Locale,
         entitlements: [],
-      };
+        authorizing_integration_owners: {},
+        attachment_size_limit: 0,
+      } as APIModalSubmitInteraction;
 
       const { formData, attachmentUrls } = extractFormData(interaction);
 
@@ -141,9 +143,11 @@ describe("boardgame form", () => {
           global_name: null,
         },
         app_permissions: "0",
-        locale: "ja",
+        locale: "ja" as Locale,
         entitlements: [],
-      };
+        authorizing_integration_owners: {},
+        attachment_size_limit: 0,
+      } as APIModalSubmitInteraction;
 
       const { formData, attachmentUrls } = extractFormData(interaction);
 
@@ -155,7 +159,7 @@ describe("boardgame form", () => {
     });
 
     it("添付ファイルがある場合、URLを抽出できる", () => {
-      const interaction: APIModalSubmitInteraction = {
+      const interaction = {
         id: "test-id",
         application_id: "test-app-id",
         type: 5,
@@ -205,15 +209,15 @@ describe("boardgame form", () => {
               ],
             },
           ],
-        },
-        resolved: {
-          attachments: {
-            "123456789": {
-              id: "123456789",
-              filename: "catan.png",
-              size: 1024,
-              url: "https://cdn.discordapp.com/attachments/123/456/catan.png",
-              proxy_url: "https://media.discordapp.net/attachments/123/456/catan.png",
+          resolved: {
+            attachments: {
+              "123456789": {
+                id: "123456789",
+                filename: "catan.png",
+                size: 1024,
+                url: "https://cdn.discordapp.com/attachments/123/456/catan.png",
+                proxy_url: "https://media.discordapp.net/attachments/123/456/catan.png",
+              },
             },
           },
         },
@@ -227,9 +231,11 @@ describe("boardgame form", () => {
           global_name: null,
         },
         app_permissions: "0",
-        locale: "ja",
+        locale: "ja" as Locale,
         entitlements: [],
-      };
+        authorizing_integration_owners: {},
+        attachment_size_limit: 0,
+      } as APIModalSubmitInteraction;
 
       const { formData, attachmentUrls } = extractFormData(interaction);
 
@@ -299,9 +305,11 @@ describe("boardgame form", () => {
           global_name: null,
         },
         app_permissions: "0",
-        locale: "ja",
+        locale: "ja" as Locale,
         entitlements: [],
-      };
+        authorizing_integration_owners: {},
+        attachment_size_limit: 0,
+      } as APIModalSubmitInteraction;
 
       const { formData, attachmentUrls } = extractFormData(interaction);
 

@@ -4,13 +4,24 @@ import type {
   APIUser,
   InteractionResponseType,
 } from "discord-api-types/v10";
+import { ComponentType } from "discord-api-types/v10";
 import { downloadAttachments } from "../utils/fileService.js";
 import { isUrl, ValidationError, validateRequired } from "../utils/validation.js";
 
 /**
- * ボードゲームフォームのデータ
+ * ボードゲームフォームのデータ（抽出時）
  */
 interface BoardGameFormData {
+  game_name: string | undefined;
+  player_count?: string;
+  play_time?: string;
+  owner_url?: string;
+}
+
+/**
+ * ボードゲームフォームのデータ（バリデーション済み）
+ */
+interface ValidatedBoardGameFormData {
   game_name: string;
   player_count?: string;
   play_time?: string;
@@ -109,22 +120,25 @@ export function extractFormData(interaction: APIModalSubmitInteraction): {
 
   // TextInput values
   for (const row of interaction.data.components) {
-    for (const component of row.components) {
-      if (component.type === 4 && component.value !== undefined) {
-        // TextInput
-        formData[component.custom_id] = component.value.trim();
+    // ActionRowコンポーネントのみを処理
+    if (row.type === ComponentType.ActionRow) {
+      for (const component of row.components) {
+        // TextInputコンポーネントのみを処理
+        if (component.type === ComponentType.TextInput && component.value !== undefined) {
+          formData[component.custom_id] = component.value.trim();
+        }
       }
     }
   }
 
   // File attachments
-  const attachmentUrls = interaction.resolved?.attachments
-    ? Object.values(interaction.resolved.attachments).map((att) => att.url)
+  const attachmentUrls = interaction.data.resolved?.attachments
+    ? Object.values(interaction.data.resolved.attachments).map((att) => att.url)
     : [];
 
   // 空文字列はundefinedとして扱う
   const result: BoardGameFormData = {
-    game_name: formData.game_name,
+    game_name: formData.game_name || undefined,
     player_count: formData.player_count || undefined,
     play_time: formData.play_time || undefined,
     owner_url: formData.owner_url || undefined,
@@ -137,10 +151,29 @@ export function extractFormData(interaction: APIModalSubmitInteraction): {
 }
 
 /**
+ * バリデーション済みデータへの変換
+ */
+function validateAndConvert(formData: BoardGameFormData): ValidatedBoardGameFormData {
+  // バリデーション
+  validateRequired(formData.game_name, "ゲーム名");
+
+  // validateRequiredを通過しているため、game_nameは必ず存在する
+  const game_name = formData.game_name as string;
+
+  // バリデーションを通過したデータを明示的に構築
+  return {
+    game_name,
+    player_count: formData.player_count,
+    play_time: formData.play_time,
+    owner_url: formData.owner_url,
+  };
+}
+
+/**
  * Embed構築
  */
 export function buildBoardGameEmbed(
-  formData: BoardGameFormData,
+  formData: ValidatedBoardGameFormData,
   user: APIUser,
   imageUrl?: string,
 ): APIEmbed {
@@ -223,8 +256,8 @@ export async function handleBoardGameSubmit(
         // データ抽出
         const { formData, attachmentUrls } = extractFormData(interaction);
 
-        // バリデーション
-        validateRequired(formData.game_name, "ゲーム名");
+        // バリデーションと変換
+        const validatedFormData = validateAndConvert(formData);
 
         // ユーザー情報取得
         const user =
@@ -241,13 +274,16 @@ export async function handleBoardGameSubmit(
         if (attachmentUrls.length > 0) {
           try {
             const files = await downloadAttachments(attachmentUrls);
-            // ファイル名を取得
-            const originalUrl = new URL(files[0].url);
-            const filename = originalUrl.pathname.split("/").pop() || `boardgame_${Date.now()}.png`;
-            downloadedFile = {
-              buffer: files[0].buffer,
-              filename,
-            };
+            if (files[0]) {
+              // ファイル名を取得
+              const originalUrl = new URL(files[0].url);
+              const filename =
+                originalUrl.pathname.split("/").pop() || `boardgame_${Date.now()}.png`;
+              downloadedFile = {
+                buffer: files[0].buffer,
+                filename,
+              };
+            }
           } catch (error) {
             console.error("Failed to download attachment:", error);
             // 画像エラーは警告として扱い、処理は継続
@@ -256,7 +292,7 @@ export async function handleBoardGameSubmit(
 
         // Embed構築（画像がある場合は attachment:// URL を使用）
         const imageUrl = downloadedFile ? `attachment://${downloadedFile.filename}` : undefined;
-        const embed = buildBoardGameEmbed(formData, user, imageUrl);
+        const embed = buildBoardGameEmbed(validatedFormData, user, imageUrl);
 
         // チャンネルに投稿
         let channelResponse: Response;
