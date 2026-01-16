@@ -209,15 +209,15 @@ describe("boardgame form", () => {
               ],
             },
           ],
-        },
-        resolved: {
-          attachments: {
-            "123456789": {
-              id: "123456789",
-              filename: "catan.png",
-              size: 1024,
-              url: "https://cdn.discordapp.com/attachments/123/456/catan.png",
-              proxy_url: "https://media.discordapp.net/attachments/123/456/catan.png",
+          resolved: {
+            attachments: {
+              "123456789": {
+                id: "123456789",
+                filename: "catan.png",
+                size: 1024,
+                url: "https://cdn.discordapp.com/attachments/123/456/catan.png",
+                proxy_url: "https://media.discordapp.net/attachments/123/456/catan.png",
+              },
             },
           },
         },
