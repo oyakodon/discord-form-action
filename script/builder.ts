@@ -1,8 +1,8 @@
-import { SlashCommandBuilder } from "discord.js";
 import { writeFile } from "node:fs/promises";
-import { join } from "node:path";
+import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { dirname } from "node:path";
+import type { RESTPostAPIApplicationCommandsJSONBody } from "discord.js";
+import { SlashCommandBuilder } from "discord.js";
 
 // __dirnameの代替（ESモジュール環境）
 const __filename = fileURLToPath(import.meta.url);
@@ -11,7 +11,7 @@ const __dirname = dirname(__filename);
 /**
  * コマンド定義を構築
  */
-function buildCommands() {
+function buildCommands(): RESTPostAPIApplicationCommandsJSONBody[] {
   // /add-game コマンド定義
   const addGameCommand = new SlashCommandBuilder()
     .setName("add-game")
@@ -41,7 +41,7 @@ async function main() {
     console.log(`✅ コマンド定義を ${outputPath} に出力しました`);
     console.log(`📝 登録されたコマンド数: ${commands.length}`);
 
-    for (const command of commands) {
+    for (const command of commands as Array<{ name: string; description: string }>) {
       console.log(`  - /${command.name}: ${command.description}`);
     }
   } catch (error) {
